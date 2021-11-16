@@ -1,15 +1,21 @@
 package com.vardelean.vendingmachine.service;
 
+import com.vardelean.vendingmachine.dto.VendingMachineUserDto;
 import com.vardelean.vendingmachine.model.Role;
 import com.vardelean.vendingmachine.model.VendingMachineUser;
+import javassist.tools.web.BadHttpRequest;
+
+import java.util.List;
 
 public interface VendingMachineUserService {
 
-  VendingMachineUser saveUser(VendingMachineUser user);
+  VendingMachineUser saveUser(VendingMachineUserDto user) throws BadHttpRequest;
 
   Role saveRole(Role role);
 
-  void addRoleToUser(String username, String roleName);
+  VendingMachineUser getUser(String username) throws BadHttpRequest;
 
-  VendingMachineUser getUser(String username);
+  List<Role> getRoles();
+
+  List<VendingMachineUser> getUsers();
 }
