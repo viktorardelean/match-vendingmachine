@@ -1,53 +1,59 @@
 package com.vardelean.vendingmachine.config;
 
 import com.vardelean.vendingmachine.filter.JwtRequestFilter;
-import com.vardelean.vendingmachine.service.VendingMachineUserDetailsService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import static org.springframework.http.HttpMethod.*;
+import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
+
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-  @Autowired private VendingMachineUserDetailsService userDetailsService;
-  @Autowired private JwtRequestFilter jwtRequestFilter;
+  private static final String ROLE_SELLER = "ROLE_SELLER";
+  private static final String ROLE_BUYER = "ROLE_BUYER";
+  private final UserDetailsService userDetailsService;
+  private final JwtRequestFilter jwtRequestFilter;
+  private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
   @Override
   protected void configure(AuthenticationManagerBuilder authenticationManagerBuilder)
       throws Exception {
-    authenticationManagerBuilder.userDetailsService(userDetailsService);
+    authenticationManagerBuilder
+        .userDetailsService(userDetailsService)
+        .passwordEncoder(bCryptPasswordEncoder);
   }
 
   @Override
   protected void configure(HttpSecurity http) throws Exception {
-    http.csrf()
-        .disable()
-        .authorizeRequests()
-        .antMatchers("/authenticate")
-        .permitAll()
-        .anyRequest()
-        .authenticated()
-        .and()
-        .sessionManagement()
-        .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+    http.csrf().disable();
+    http.sessionManagement().sessionCreationPolicy(STATELESS);
+    http.authorizeRequests().antMatchers(POST, "/api/authenticate").permitAll();
+    http.authorizeRequests().antMatchers(POST, "/api/user/**").permitAll();
+    http.authorizeRequests().antMatchers(POST, "/api/users/**").permitAll();
+    http.authorizeRequests().antMatchers(POST, "/api/roles/**").permitAll();
+    http.authorizeRequests().antMatchers(POST, "/api/product/**").hasAnyAuthority(ROLE_SELLER);
+    http.authorizeRequests().antMatchers(PUT, "/api/product/**").hasAnyAuthority(ROLE_SELLER);
+    http.authorizeRequests().antMatchers(DELETE, "/api/product/**").hasAnyAuthority(ROLE_SELLER);
+    http.authorizeRequests().antMatchers(POST, "/api/deposit/**").hasAnyAuthority(ROLE_BUYER);
+    http.authorizeRequests().antMatchers(DELETE, "/api/buy/**").hasAnyAuthority(ROLE_BUYER);
+    http.authorizeRequests().antMatchers(DELETE, "/api/reset/**").hasAnyAuthority(ROLE_BUYER);
+    http.authorizeRequests().anyRequest().authenticated();
+
     http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
   }
 
   @Bean
-  public PasswordEncoder passwordEncoder() {
-    return NoOpPasswordEncoder.getInstance();
-  }
-
   @Override
-  @Bean
   public AuthenticationManager authenticationManagerBean() throws Exception {
     return super.authenticationManagerBean();
   }

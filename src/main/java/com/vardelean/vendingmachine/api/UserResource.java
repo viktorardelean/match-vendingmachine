@@ -1,8 +1,10 @@
 package com.vardelean.vendingmachine.api;
 
 import com.vardelean.vendingmachine.dto.VendingMachineUserDto;
+import com.vardelean.vendingmachine.model.AuthenticationRequest;
 import com.vardelean.vendingmachine.model.Role;
 import com.vardelean.vendingmachine.model.VendingMachineUser;
+import com.vardelean.vendingmachine.service.AuthService;
 import com.vardelean.vendingmachine.service.VendingMachineUserService;
 import javassist.tools.web.BadHttpRequest;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserResource {
   private final VendingMachineUserService vendingMachineUserService;
+  private final AuthService authService;
+
+  @PostMapping("/authenticate")
+  public ResponseEntity<?> createAuthenticationToken(
+      @RequestBody AuthenticationRequest authenticationRequest) {
+
+    return authService.authenticate(authenticationRequest);
+  }
 
   @GetMapping("/user/{username}")
   public ResponseEntity<VendingMachineUser> getUser(@PathVariable String username)
