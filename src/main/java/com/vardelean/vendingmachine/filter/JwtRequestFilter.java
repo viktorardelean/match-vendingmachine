@@ -43,7 +43,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
       Optional<String> token = jwtUtil.extractToken(authorizationHeader);
       if (token.isPresent()) {
         try {
-          DecodedJWT decodedJWT = jwtUtil.validateToken(token.get());
+          DecodedJWT decodedJWT = jwtUtil.decodeToken(token.get());
           final String username = decodedJWT.getSubject();
           UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
               new UsernamePasswordAuthenticationToken(

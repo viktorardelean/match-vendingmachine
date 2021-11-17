@@ -46,9 +46,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     http.authorizeRequests().antMatchers(POST, "/api/product/**").hasAnyAuthority(ROLE_SELLER);
     http.authorizeRequests().antMatchers(PUT, "/api/product/**").hasAnyAuthority(ROLE_SELLER);
     http.authorizeRequests().antMatchers(DELETE, "/api/product/**").hasAnyAuthority(ROLE_SELLER);
-    http.authorizeRequests().antMatchers(POST, "/api/deposit/**").hasAnyAuthority(ROLE_BUYER);
-    http.authorizeRequests().antMatchers(DELETE, "/api/buy/**").hasAnyAuthority(ROLE_BUYER);
-    http.authorizeRequests().antMatchers(DELETE, "/api/reset/**").hasAnyAuthority(ROLE_BUYER);
+    http.authorizeRequests().antMatchers(PATCH, "/api/deposit/**").hasAnyAuthority(ROLE_BUYER);
+    http.authorizeRequests().antMatchers(POST, "/api/buy/**").hasAnyAuthority(ROLE_BUYER);
+    http.authorizeRequests().antMatchers(PATCH, "/api/reset/**").hasAnyAuthority(ROLE_BUYER);
     http.authorizeRequests().anyRequest().authenticated();
 
     http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);

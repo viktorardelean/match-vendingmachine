@@ -106,6 +106,22 @@ public class VendingMachineUserServiceImpl
   }
 
   @Override
+  public void resetDeposit(String username) {
+    log.info("Reset deposit for user : {}", username);
+    Optional<VendingMachineUser> vendingMachineUser =
+        vendingMachineUserRepo.findByUsername(username);
+    vendingMachineUser.ifPresentOrElse(
+        user -> {
+          user.setDeposit(0L);
+        },
+        () -> {
+          log.error("User not found in the DB: {}", username);
+          throw new ResponseStatusException(
+              HttpStatus.BAD_REQUEST, "User does not exists: " + username);
+        });
+  }
+
+  @Override
   public Role saveRole(@NonNull Role role) {
     log.info("Save role to DB: {}", role);
     return roleRepo.save(role);
@@ -113,6 +129,7 @@ public class VendingMachineUserServiceImpl
 
   @Override
   public List<Role> getRoles() {
+    log.info("Get all roles");
     return roleRepo.findAll();
   }
 

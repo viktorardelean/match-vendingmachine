@@ -35,6 +35,10 @@ public class JwtUtil {
     return authorities;
   }
 
+  public String extractUsername(DecodedJWT decodedToken) {
+    return Objects.requireNonNullElse(decodedToken.getSubject(), "");
+  }
+
   public AuthenticationResponse generateToken(UserDetails userDetails) {
 
     String accessToken =
@@ -60,7 +64,7 @@ public class JwtUtil {
     return new AuthenticationResponse(accessToken, refreshToken);
   }
 
-  public DecodedJWT validateToken(String token) {
+  public DecodedJWT decodeToken(String token) {
     final JWTVerifier verifier = JWT.require(algorithm).build();
     return verifier.verify(token);
   }

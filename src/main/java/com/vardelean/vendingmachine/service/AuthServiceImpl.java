@@ -53,7 +53,7 @@ public class AuthServiceImpl implements AuthService {
     Optional<String> refreshToken = jwtUtil.extractToken(authorizationHeader);
     if (refreshToken.isPresent()) {
       try {
-        DecodedJWT decodedJWT = jwtUtil.validateToken(refreshToken.get());
+        DecodedJWT decodedJWT = jwtUtil.decodeToken(refreshToken.get());
         final String username = decodedJWT.getSubject();
         final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         httpUtil.sendTokenResponse(response, jwtUtil.generateToken(userDetails));

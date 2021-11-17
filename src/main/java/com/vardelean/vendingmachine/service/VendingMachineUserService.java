@@ -22,4 +22,6 @@ public interface VendingMachineUserService {
   VendingMachineUserDto updateUser(Long userId, VendingMachineUserDto vendingMachineUserDto);
 
   void deleteUser(Long userId);
+
+  void resetDeposit(String username);
 }

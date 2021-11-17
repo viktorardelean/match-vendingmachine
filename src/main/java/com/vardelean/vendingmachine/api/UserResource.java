@@ -6,6 +6,7 @@ import com.vardelean.vendingmachine.model.Role;
 import com.vardelean.vendingmachine.model.VendingMachineUser;
 import com.vardelean.vendingmachine.service.AuthService;
 import com.vardelean.vendingmachine.service.VendingMachineUserService;
+import com.vardelean.vendingmachine.util.JwtUtil;
 import javassist.tools.web.BadHttpRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
@@ -24,6 +26,7 @@ import java.util.List;
 public class UserResource {
   private final VendingMachineUserService vendingMachineUserService;
   private final AuthService authService;
+  private final JwtUtil jwtUtil;
 
   @PostMapping("/authenticate")
   public void createAuthenticationToken(
@@ -65,6 +68,13 @@ public class UserResource {
   @DeleteMapping("/user/{userId}")
   public void deleteUser(@PathVariable Long userId) {
     vendingMachineUserService.deleteUser(userId);
+  }
+
+  @PatchMapping("/reset")
+  public void resetDeposit(@RequestHeader(name = "Authorization") String authorizationHeader) {
+    Optional<String> jwt = jwtUtil.extractToken(authorizationHeader);
+    String username = jwtUtil.extractUsername(jwtUtil.decodeToken(jwt.get()));
+    vendingMachineUserService.resetDeposit(username);
   }
 
   @PostMapping("/role")
