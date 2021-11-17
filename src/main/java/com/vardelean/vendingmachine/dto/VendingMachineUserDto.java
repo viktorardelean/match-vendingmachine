@@ -1,16 +1,16 @@
 package com.vardelean.vendingmachine.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@RequiredArgsConstructor
 public class VendingMachineUserDto {
 
-  private String username;
-  private String password;
-  private Long deposit;
-  private String roleName;
+  private Long id;
+  @NonNull private String username;
+  @NonNull private String password;
+  @NonNull private Long deposit;
+  @NonNull private String roleName;
 }

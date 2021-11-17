@@ -55,32 +55,60 @@ public class VendingMachineUserServiceImpl
   }
 
   @Override
-  public VendingMachineUser saveUser(@NonNull VendingMachineUserDto vendingMachineUserDto) {
+  public VendingMachineUserDto saveUser(@NonNull VendingMachineUserDto vendingMachineUserDto) {
     VendingMachineUser vendingMachineUser =
         vendingMachineUserConverter.toEntity(vendingMachineUserDto);
     vendingMachineUser.getRoles().add(getRole(vendingMachineUserDto.getRoleName()));
 
     log.info("Save user to DB: {}", vendingMachineUser);
-    return vendingMachineUserRepo.save(vendingMachineUser);
+    vendingMachineUser = vendingMachineUserRepo.save(vendingMachineUser);
+    return vendingMachineUserConverter.toDto(vendingMachineUser);
+  }
+
+  @Override
+  public VendingMachineUserDto getUser(@NonNull Long userId) {
+    log.info("Read user from DB: {}", userId);
+    Optional<VendingMachineUser> vendingMachineUser = vendingMachineUserRepo.findById(userId);
+    return vendingMachineUser
+        .map(user -> vendingMachineUserConverter.toDto(user))
+        .orElseThrow(
+            () -> {
+              log.error("User not found in the DB: {}", userId);
+              throw new ResponseStatusException(
+                  HttpStatus.BAD_REQUEST, "User does not exists: " + userId);
+            });
+  }
+
+  @Override
+  public VendingMachineUserDto updateUser(
+      Long userId, VendingMachineUserDto vendingMachineUserDto) {
+    log.info("Update user : {}", userId);
+    Optional<VendingMachineUser> vendingMachineUser = vendingMachineUserRepo.findById(userId);
+    return vendingMachineUser
+        .map(
+            user -> {
+              vendingMachineUserConverter.toEntity(vendingMachineUserDto, user);
+              user.setRoles(List.of(getRole(vendingMachineUserDto.getRoleName())));
+              return vendingMachineUserConverter.toDto(user);
+            })
+        .orElseThrow(
+            () -> {
+              log.error("User not found in the DB: {}", userId);
+              throw new ResponseStatusException(
+                  HttpStatus.BAD_REQUEST, "User does not exists: " + userId);
+            });
+  }
+
+  @Override
+  public void deleteUser(Long userId) {
+    log.info("Delete user : {}", userId);
+    vendingMachineUserRepo.deleteById(userId);
   }
 
   @Override
   public Role saveRole(@NonNull Role role) {
     log.info("Save role to DB: {}", role);
     return roleRepo.save(role);
-  }
-
-  @Override
-  public VendingMachineUser getUser(@NonNull String username) {
-    log.info("Read user from DB: {}", username);
-    Optional<VendingMachineUser> vendingMachineUser =
-        vendingMachineUserRepo.findByUsername(username);
-    return vendingMachineUser.orElseThrow(
-        () -> {
-          log.error("User not found in the DB: {}", username);
-          return new ResponseStatusException(
-              HttpStatus.BAD_REQUEST, "User does not exists: " + username);
-        });
   }
 
   @Override

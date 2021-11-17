@@ -11,10 +11,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -24,12 +21,15 @@ public class JwtUtil {
   private static final String SECRET_KEY = "secret";
   private static final Algorithm algorithm = Algorithm.HMAC256(SECRET_KEY.getBytes());
   private static final String ISSUER = "Vending Machine App";
-  private static final Integer VALIDITY_ACCESS_TOKEN = 10 * 60 * 1000;
-  private static final Integer VALIDITY_REFRESH_TOKEN = 30 * 60 * 1000;
+  private static final Integer VALIDITY_ACCESS_TOKEN = 120 * 60 * 1000;
+  private static final Integer VALIDITY_REFRESH_TOKEN = 360 * 60 * 1000;
   private static final String CLAIMS_KEY = "roles";
+  private static final String BEARER = "Bearer ";
 
   public Collection<SimpleGrantedAuthority> extractClaims(DecodedJWT decodedToken) {
-    List<String> roles = decodedToken.getClaim(CLAIMS_KEY).asList(String.class);
+    List<String> roles =
+        Objects.requireNonNullElse(
+            decodedToken.getClaim(CLAIMS_KEY).asList(String.class), Collections.emptyList());
     Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
     roles.forEach(role -> authorities.add(new SimpleGrantedAuthority((role))));
     return authorities;
@@ -63,5 +63,12 @@ public class JwtUtil {
   public DecodedJWT validateToken(String token) {
     final JWTVerifier verifier = JWT.require(algorithm).build();
     return verifier.verify(token);
+  }
+
+  public Optional<String> extractToken(String authorizationHeader) {
+    if (authorizationHeader != null && authorizationHeader.startsWith(BEARER)) {
+      return Optional.of(authorizationHeader.substring(BEARER.length()));
+    }
+    return Optional.empty();
   }
 }

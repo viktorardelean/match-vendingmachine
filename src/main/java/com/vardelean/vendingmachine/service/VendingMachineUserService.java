@@ -9,13 +9,17 @@ import java.util.List;
 
 public interface VendingMachineUserService {
 
-  VendingMachineUser saveUser(VendingMachineUserDto user) throws BadHttpRequest;
+  VendingMachineUserDto saveUser(VendingMachineUserDto user) throws BadHttpRequest;
 
   Role saveRole(Role role);
 
-  VendingMachineUser getUser(String username) throws BadHttpRequest;
+  VendingMachineUserDto getUser(Long userId) throws BadHttpRequest;
 
   List<Role> getRoles();
 
   List<VendingMachineUser> getUsers();
+
+  VendingMachineUserDto updateUser(Long userId, VendingMachineUserDto vendingMachineUserDto);
+
+  void deleteUser(Long userId);
 }

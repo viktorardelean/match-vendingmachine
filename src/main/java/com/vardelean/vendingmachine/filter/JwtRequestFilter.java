@@ -1,15 +1,13 @@
 package com.vardelean.vendingmachine.filter;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vardelean.vendingmachine.util.HttpUtil;
 import com.vardelean.vendingmachine.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -19,21 +17,17 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Optional;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @Slf4j
 @RequiredArgsConstructor
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
 
-  private static final String BEARER = "Bearer ";
-  private final UserDetailsService userDetailsService;
   private final JwtUtil jwtUtil;
+  private final HttpUtil httpUtil;
 
   @Override
   protected void doFilterInternal(
@@ -42,39 +36,27 @@ public class JwtRequestFilter extends OncePerRequestFilter {
       @NonNull final FilterChain filterChain)
       throws ServletException, IOException {
 
-    final String authorizationHeader = request.getHeader(AUTHORIZATION);
-
-    if (authorizationHeader != null && authorizationHeader.startsWith(BEARER)) {
-      try {
-        final String jwt = authorizationHeader.substring(BEARER.length());
-        DecodedJWT decodedJWT = jwtUtil.validateToken(jwt);
-        final String username = decodedJWT.getSubject();
-
-        if (!username.isEmpty() && SecurityContextHolder.getContext().getAuthentication() == null) {
-          UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
+    if (request.getServletPath().equals("/api/token/refresh")) {
+      filterChain.doFilter(request, response);
+    } else {
+      final String authorizationHeader = request.getHeader(AUTHORIZATION);
+      Optional<String> token = jwtUtil.extractToken(authorizationHeader);
+      if (token.isPresent()) {
+        try {
+          DecodedJWT decodedJWT = jwtUtil.validateToken(token.get());
+          final String username = decodedJWT.getSubject();
           UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
               new UsernamePasswordAuthenticationToken(
-                  userDetails, null, userDetails.getAuthorities());
-
+                  username, null, jwtUtil.extractClaims(decodedJWT));
           usernamePasswordAuthenticationToken.setDetails(
               new WebAuthenticationDetailsSource().buildDetails(request));
           SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+        } catch (Exception e) {
+          log.error("Error logging in: {}", e.getMessage());
+          httpUtil.sendErrorResponse(response, e);
         }
-      } catch (Exception e) {
-        log.error("Error logging in: {}", e.getMessage());
-        sendErrorResponse(response, e);
       }
+      filterChain.doFilter(request, response);
     }
-    filterChain.doFilter(request, response);
-  }
-
-  private void sendErrorResponse(HttpServletResponse response, Exception e) throws IOException {
-    response.setHeader("error", e.getMessage());
-    response.setContentType(APPLICATION_JSON_VALUE);
-    response.setStatus(FORBIDDEN.value());
-    Map<String, String> error = new HashMap<>();
-    error.put("error", e.getMessage());
-    new ObjectMapper().writeValue(response.getOutputStream(), error);
   }
 }

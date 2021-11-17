@@ -12,6 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 
@@ -23,16 +26,22 @@ public class UserResource {
   private final AuthService authService;
 
   @PostMapping("/authenticate")
-  public ResponseEntity<?> createAuthenticationToken(
-      @RequestBody AuthenticationRequest authenticationRequest) {
-
-    return authService.authenticate(authenticationRequest);
+  public void createAuthenticationToken(
+      @RequestBody AuthenticationRequest authenticationRequest, HttpServletResponse response)
+      throws IOException {
+    authService.authenticate(authenticationRequest, response);
   }
 
-  @GetMapping("/user/{username}")
-  public ResponseEntity<VendingMachineUser> getUser(@PathVariable String username)
+  @GetMapping("/token/refresh")
+  public void refreshToken(HttpServletRequest request, HttpServletResponse response)
+      throws IOException {
+    authService.refreshToken(request, response);
+  }
+
+  @GetMapping("/user/{userId}")
+  public ResponseEntity<VendingMachineUserDto> getUser(@PathVariable Long userId)
       throws BadHttpRequest {
-    return ResponseEntity.ok().body(vendingMachineUserService.getUser(username));
+    return ResponseEntity.ok().body(vendingMachineUserService.getUser(userId));
   }
 
   @GetMapping("/users")
@@ -40,21 +49,22 @@ public class UserResource {
     return ResponseEntity.ok().body(vendingMachineUserService.getUsers());
   }
 
-  @GetMapping("/roles")
-  public ResponseEntity<List<Role>> getRoles() {
-    return ResponseEntity.ok().body(vendingMachineUserService.getRoles());
+  @PostMapping("/user")
+  public ResponseEntity<VendingMachineUserDto> registerUser(
+      @RequestBody VendingMachineUserDto vendingMachineUserDto) throws BadHttpRequest {
+    return ResponseEntity.ok().body(vendingMachineUserService.saveUser(vendingMachineUserDto));
   }
 
-  @PostMapping("/user")
-  public ResponseEntity<VendingMachineUser> registerUser(
-      @RequestBody VendingMachineUserDto vendingMachineUserDto) throws BadHttpRequest {
-    URI uri =
-        URI.create(
-            ServletUriComponentsBuilder.fromCurrentContextPath()
-                .path("/api/user/register")
-                .toUriString());
-    return ResponseEntity.created(uri)
-        .body(vendingMachineUserService.saveUser(vendingMachineUserDto));
+  @PutMapping("/user/{userId}")
+  public ResponseEntity<VendingMachineUserDto> updateUser(
+      @PathVariable Long userId, @RequestBody VendingMachineUserDto vendingMachineUserDto) {
+    return ResponseEntity.ok()
+        .body(vendingMachineUserService.updateUser(userId, vendingMachineUserDto));
+  }
+
+  @DeleteMapping("/user/{userId}")
+  public void deleteUser(@PathVariable Long userId) {
+    vendingMachineUserService.deleteUser(userId);
   }
 
   @PostMapping("/role")
@@ -65,5 +75,10 @@ public class UserResource {
                 .path("/api/role/register")
                 .toUriString());
     return ResponseEntity.created(uri).body(vendingMachineUserService.saveRole(role));
+  }
+
+  @GetMapping("/roles")
+  public ResponseEntity<List<Role>> getRoles() {
+    return ResponseEntity.ok().body(vendingMachineUserService.getRoles());
   }
 }

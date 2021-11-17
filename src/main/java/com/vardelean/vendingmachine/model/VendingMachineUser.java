@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -25,5 +25,8 @@ public class VendingMachineUser {
   private Long deposit;
 
   @ManyToMany(fetch = FetchType.EAGER)
-  private Collection<Role> roles = new ArrayList<>();
+  private List<Role> roles = new ArrayList<>();
+
+  @OneToMany(mappedBy = "seller")
+  private List<Product> products = new ArrayList<>();
 }
