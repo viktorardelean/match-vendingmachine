@@ -9,11 +9,9 @@ import com.vardelean.vendingmachine.repo.VendingMachineUserRepo;
 import com.vardelean.vendingmachine.util.HttpUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -34,20 +32,26 @@ public class ProductServiceImpl implements ProductService {
 
   @Override
   public ProductDto saveProduct(@NonNull ProductDto productDto) {
-    Product product = productConverter.toEntity(productDto);
     if (productDto.getSellerId() == null) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "sellerId must not be null!");
+      throw httpUtil.badRequest(productDto.getSellerId(), "sellerId must not be null: ");
     }
-    VendingMachineUser seller = vendingMachineUserRepo.findById(productDto.getSellerId());
-    if (isNotSeller(seller)) {
-      throw httpUtil.badRequest(
-          seller.getId(), "Cannot assign a product to a user that is not a seller: ");
-    }
-    product.setSeller(seller);
+    Optional<VendingMachineUser> sellerOptional =
+        vendingMachineUserRepo.findById(productDto.getSellerId());
+    return sellerOptional
+        .map(
+            seller -> {
+              Product product = productConverter.toEntity(productDto);
+              if (isNotSeller(seller)) {
+                throw httpUtil.badRequest(
+                    seller.getId(), "Cannot assign a product to a user that is not a seller: ");
+              }
+              product.setSeller(seller);
 
-    log.info("Save product to DB: {}", product);
-    product = productRepo.save(product);
-    return productConverter.toDto(product);
+              log.info("Save product to DB: {}", product);
+              product = productRepo.save(product);
+              return productConverter.toDto(product);
+            })
+        .orElseThrow(() -> httpUtil.badRequest(productDto.getSellerId(), "User does not exist: "));
   }
 
   @Override
@@ -68,18 +72,29 @@ public class ProductServiceImpl implements ProductService {
   @Override
   public ProductDto updateProduct(Long productId, ProductDto productDto) {
     log.info("Update product : {}", productId);
+    if (productDto.getSellerId() == null) {
+      throw httpUtil.badRequest(productDto.getSellerId(), "sellerId must not be null: ");
+    }
     Optional<Product> productOptional = productRepo.findById(productId);
     return productOptional
         .map(
             product -> {
               productConverter.toEntity(productDto, product);
-              VendingMachineUser seller = vendingMachineUserRepo.findById(productDto.getSellerId());
-              if (isNotSeller(seller)) {
-                throw httpUtil.badRequest(
-                    seller.getId(), "Cannot assign a product to a user that is not a seller: ");
-              }
-              product.setSeller(seller);
-              return productConverter.toDto(product);
+              Optional<VendingMachineUser> sellerOptional =
+                  vendingMachineUserRepo.findById(productDto.getSellerId());
+              return sellerOptional
+                  .map(
+                      seller -> {
+                        if (isNotSeller(seller)) {
+                          throw httpUtil.badRequest(
+                              seller.getId(),
+                              "Cannot assign a product to a user that is not a seller: ");
+                        }
+                        product.setSeller(seller);
+                        return productConverter.toDto(product);
+                      })
+                  .orElseThrow(
+                      () -> httpUtil.badRequest(productDto.getSellerId(), "User does not exist: "));
             })
         .orElseThrow(() -> httpUtil.badRequest(productId, "Product does not exists: "));
   }
