@@ -3,6 +3,7 @@ package com.vardelean.vendingmachine.service;
 import com.vardelean.vendingmachine.converter.ProductConverter;
 import com.vardelean.vendingmachine.dto.ProductDto;
 import com.vardelean.vendingmachine.model.Product;
+import com.vardelean.vendingmachine.model.VendingMachineUser;
 import com.vardelean.vendingmachine.repo.ProductRepo;
 import com.vardelean.vendingmachine.repo.VendingMachineUserRepo;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static com.vardelean.vendingmachine.config.SecurityConfig.ROLE_SELLER;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -33,7 +36,11 @@ public class ProductServiceImpl implements ProductService {
     if (productDto.getSellerId() == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "sellerId must not be null!");
     }
-    product.setSeller(vendingMachineUserRepo.getById(productDto.getSellerId()));
+    VendingMachineUser seller = vendingMachineUserRepo.getById(productDto.getSellerId());
+    if (isNotSeller(seller)) {
+      throw badRequest(seller.getId(), "Cannot assign a product to a user that is not a seller: ");
+    }
+    product.setSeller(seller);
 
     log.info("Save product to DB: {}", product);
     product = productRepo.save(product);
@@ -46,12 +53,7 @@ public class ProductServiceImpl implements ProductService {
     Optional<Product> product = productRepo.findById(productId);
     return product
         .map(productConverter::toDto)
-        .orElseThrow(
-            () -> {
-              log.error("Product not found in the DB: {}", productId);
-              throw new ResponseStatusException(
-                  HttpStatus.BAD_REQUEST, "Product does not exists: " + productId);
-            });
+        .orElseThrow(() -> badRequest(productId, "Product does not exists: "));
   }
 
   @Override
@@ -68,20 +70,29 @@ public class ProductServiceImpl implements ProductService {
         .map(
             product -> {
               productConverter.toEntity(productDto, product);
-              product.setSeller(vendingMachineUserRepo.getById(productDto.getSellerId()));
+              VendingMachineUser seller = vendingMachineUserRepo.getById(productDto.getSellerId());
+              if (isNotSeller(seller)) {
+                throw badRequest(
+                    seller.getId(), "Cannot assign a product to a user that is not a seller: ");
+              }
+              product.setSeller(seller);
               return productConverter.toDto(product);
             })
-        .orElseThrow(
-            () -> {
-              log.error("Product not found in the DB: {}", productId);
-              throw new ResponseStatusException(
-                  HttpStatus.BAD_REQUEST, "Product does not exists: " + productId);
-            });
+        .orElseThrow(() -> badRequest(productId, "Product does not exists: "));
   }
 
   @Override
   public void deleteProduct(Long productId) {
     log.info("Delete product : {}", productId);
     productRepo.deleteById(productId);
+  }
+
+  private RuntimeException badRequest(Long productId, String message) {
+    log.error(message + "{}", productId);
+    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message + productId);
+  }
+
+  private boolean isNotSeller(VendingMachineUser seller) {
+    return seller.getRoles().stream().anyMatch(role -> ROLE_SELLER.equals(role.getName()));
   }
 }

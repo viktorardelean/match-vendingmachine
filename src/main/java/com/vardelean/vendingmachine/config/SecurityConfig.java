@@ -19,8 +19,8 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 @RequiredArgsConstructor
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-  private static final String ROLE_SELLER = "ROLE_SELLER";
-  private static final String ROLE_BUYER = "ROLE_BUYER";
+  public static final String ROLE_SELLER = "ROLE_SELLER";
+  public static final String ROLE_BUYER = "ROLE_BUYER";
   private final UserDetailsService userDetailsService;
   private final JwtRequestFilter jwtRequestFilter;
   private final BCryptPasswordEncoder bCryptPasswordEncoder;
