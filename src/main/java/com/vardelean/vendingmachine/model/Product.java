@@ -15,8 +15,8 @@ public class Product {
   @GeneratedValue(strategy = GenerationType.AUTO)
   private Long id;
 
-  private String amountAvailable;
-  private String cost;
+  private Long amountAvailable;
+  private Long cost;
 
   @Column(unique = true, nullable = false)
   private String productName;
