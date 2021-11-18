@@ -4,7 +4,7 @@ import com.vardelean.vendingmachine.dto.BuyRequestDto;
 import com.vardelean.vendingmachine.dto.BuyResponseDto;
 import com.vardelean.vendingmachine.dto.DepositRequestDto;
 import com.vardelean.vendingmachine.dto.DepositResponseDto;
-import com.vardelean.vendingmachine.service.VendingMachineService;
+import com.vardelean.vendingmachine.ut.service.VendingMachineService;
 import com.vardelean.vendingmachine.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

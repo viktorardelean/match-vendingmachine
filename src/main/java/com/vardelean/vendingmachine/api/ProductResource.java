@@ -1,7 +1,7 @@
 package com.vardelean.vendingmachine.api;
 
 import com.vardelean.vendingmachine.dto.ProductDto;
-import com.vardelean.vendingmachine.service.ProductService;
+import com.vardelean.vendingmachine.ut.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

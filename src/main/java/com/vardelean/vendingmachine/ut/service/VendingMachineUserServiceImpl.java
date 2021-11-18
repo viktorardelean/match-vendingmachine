@@ -1,4 +1,4 @@
-package com.vardelean.vendingmachine.service;
+package com.vardelean.vendingmachine.ut.service;
 
 import com.vardelean.vendingmachine.converter.VendingMachineUserConverter;
 import com.vardelean.vendingmachine.dto.VendingMachineUserDto;

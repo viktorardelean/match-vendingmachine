@@ -1,4 +1,4 @@
-package com.vardelean.vendingmachine.service;
+package com.vardelean.vendingmachine.ut.service;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.vardelean.vendingmachine.model.AuthenticationRequest;

@@ -1,4 +1,4 @@
-package com.vardelean.vendingmachine.service;
+package com.vardelean.vendingmachine.ut.service;
 
 import com.vardelean.vendingmachine.dto.*;
 import com.vardelean.vendingmachine.model.Product;
