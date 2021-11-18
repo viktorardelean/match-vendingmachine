@@ -1,15 +1,17 @@
 package com.vardelean.vendingmachine.service;
 
 import com.vardelean.vendingmachine.dto.ProductDto;
-import javassist.tools.web.BadHttpRequest;
+import com.vardelean.vendingmachine.model.Product;
 
 import java.util.List;
 
 public interface ProductService {
 
-  ProductDto saveProduct(ProductDto product) throws BadHttpRequest;
+  ProductDto saveProduct(ProductDto product);
 
-  ProductDto getProduct(Long productId) throws BadHttpRequest;
+  ProductDto getProduct(Long productId);
+
+  Product getProductEntity(Long productId);
 
   List<ProductDto> getProducts();
 

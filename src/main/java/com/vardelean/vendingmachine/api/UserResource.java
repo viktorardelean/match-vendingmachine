@@ -7,7 +7,6 @@ import com.vardelean.vendingmachine.model.VendingMachineUser;
 import com.vardelean.vendingmachine.service.AuthService;
 import com.vardelean.vendingmachine.service.VendingMachineUserService;
 import com.vardelean.vendingmachine.util.JwtUtil;
-import javassist.tools.web.BadHttpRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +14,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
@@ -42,9 +42,8 @@ public class UserResource {
   }
 
   @GetMapping("/user/{userId}")
-  public ResponseEntity<VendingMachineUserDto> getUser(@PathVariable Long userId)
-      throws BadHttpRequest {
-    return ResponseEntity.ok().body(vendingMachineUserService.getUser(userId));
+  public ResponseEntity<VendingMachineUserDto> getUser(@PathVariable Long userId) {
+    return ResponseEntity.ok().body(vendingMachineUserService.getUserById(userId));
   }
 
   @GetMapping("/users")
@@ -54,13 +53,13 @@ public class UserResource {
 
   @PostMapping("/user")
   public ResponseEntity<VendingMachineUserDto> registerUser(
-      @RequestBody VendingMachineUserDto vendingMachineUserDto) throws BadHttpRequest {
+      @RequestBody @Valid VendingMachineUserDto vendingMachineUserDto) {
     return ResponseEntity.ok().body(vendingMachineUserService.saveUser(vendingMachineUserDto));
   }
 
   @PutMapping("/user/{userId}")
   public ResponseEntity<VendingMachineUserDto> updateUser(
-      @PathVariable Long userId, @RequestBody VendingMachineUserDto vendingMachineUserDto) {
+      @PathVariable Long userId, @RequestBody @Valid VendingMachineUserDto vendingMachineUserDto) {
     return ResponseEntity.ok()
         .body(vendingMachineUserService.updateUser(userId, vendingMachineUserDto));
   }
@@ -78,7 +77,7 @@ public class UserResource {
   }
 
   @PostMapping("/role")
-  public ResponseEntity<Role> registerRole(@RequestBody Role role) {
+  public ResponseEntity<Role> registerRole(@RequestBody @Valid Role role) {
     URI uri =
         URI.create(
             ServletUriComponentsBuilder.fromCurrentContextPath()

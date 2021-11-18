@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotEmpty;
 
 @Data
 @NoArgsConstructor
@@ -17,5 +18,6 @@ public class Role {
   private Long id;
 
   @Column(unique = true, nullable = false)
+  @NotEmpty
   private String name;
 }

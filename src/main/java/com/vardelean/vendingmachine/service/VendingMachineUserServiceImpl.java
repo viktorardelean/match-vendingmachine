@@ -66,17 +66,32 @@ public class VendingMachineUserServiceImpl
   }
 
   @Override
-  public VendingMachineUserDto getUser(@NonNull Long userId) {
+  public VendingMachineUserDto getUserById(@NonNull Long userId) {
     log.info("Read user from DB: {}", userId);
     Optional<VendingMachineUser> vendingMachineUser = vendingMachineUserRepo.findById(userId);
     return vendingMachineUser
-        .map(user -> vendingMachineUserConverter.toDto(user))
+        .map(vendingMachineUserConverter::toDto)
         .orElseThrow(
             () -> {
               log.error("User not found in the DB: {}", userId);
               throw new ResponseStatusException(
                   HttpStatus.BAD_REQUEST, "User does not exists: " + userId);
             });
+  }
+
+  @Override
+  public VendingMachineUser getUserByUsername(@NonNull String username) {
+    log.info("Read user from DB: {}", username);
+    Optional<VendingMachineUser> vendingMachineUser =
+        vendingMachineUserRepo.findByUsername(username);
+    return vendingMachineUser
+        // .map(vendingMachineUserConverter::toDto)
+        .orElseThrow(
+        () -> {
+          log.error("User not found in the DB: {}", username);
+          throw new ResponseStatusException(
+              HttpStatus.BAD_REQUEST, "User does not exists: " + username);
+        });
   }
 
   @Override

@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.NotNull;
 import java.util.Map;
 
 @Data
@@ -11,5 +12,5 @@ import java.util.Map;
 @NoArgsConstructor
 public class DepositRequestDto {
 
-  private Map<Long, Long> coins;
+  @NotNull private Map<Long, Long> coins;
 }

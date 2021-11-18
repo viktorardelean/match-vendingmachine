@@ -1,7 +1,9 @@
 package com.vardelean.vendingmachine;
 
+import com.vardelean.vendingmachine.dto.ProductDto;
 import com.vardelean.vendingmachine.dto.VendingMachineUserDto;
 import com.vardelean.vendingmachine.model.Role;
+import com.vardelean.vendingmachine.service.ProductService;
 import com.vardelean.vendingmachine.service.VendingMachineUserService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -23,15 +25,23 @@ public class VendingmachineApplication {
   }
 
   @Bean
-  CommandLineRunner run(VendingMachineUserService vendingMachineUserService) {
+  CommandLineRunner run(
+      VendingMachineUserService vendingMachineUserService, ProductService productService) {
     return args -> {
       vendingMachineUserService.saveRole(new Role(null, "ROLE_BUYER"));
       vendingMachineUserService.saveRole(new Role(null, "ROLE_SELLER"));
 
-      vendingMachineUserService.saveUser(
-          new VendingMachineUserDto("user1", "pass1", 100L, "ROLE_BUYER"));
-      vendingMachineUserService.saveUser(
-          new VendingMachineUserDto("user2", "pass2", 0L, "ROLE_SELLER"));
+      VendingMachineUserDto user1 =
+          vendingMachineUserService.saveUser(
+              new VendingMachineUserDto("user1", "pass1", 100L, "ROLE_BUYER"));
+      VendingMachineUserDto user2 =
+          vendingMachineUserService.saveUser(
+              new VendingMachineUserDto("user2", "pass2", 0L, "ROLE_SELLER"));
+
+      productService.saveProduct(new ProductDto(10L, 10L, "snickers", user2.getId()));
+      productService.saveProduct(new ProductDto(10L, 20L, "water", user2.getId()));
+      productService.saveProduct(new ProductDto(5L, 5L, "chips", user2.getId()));
+      productService.saveProduct(new ProductDto(8L, 80L, "wine", user2.getId()));
     };
   }
 }

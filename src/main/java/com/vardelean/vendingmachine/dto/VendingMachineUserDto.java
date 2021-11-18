@@ -2,6 +2,10 @@ package com.vardelean.vendingmachine.dto;
 
 import lombok.*;
 
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.PositiveOrZero;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -9,8 +13,11 @@ import lombok.*;
 public class VendingMachineUserDto {
 
   private Long id;
-  @NonNull private String username;
-  @NonNull private String password;
-  @NonNull private Long deposit;
-  @NonNull private String roleName;
+  @NonNull @NotEmpty private String username;
+
+  @NonNull @NotEmpty private String password;
+
+  @NonNull @NotNull @PositiveOrZero private Long deposit;
+
+  @NonNull @NotEmpty private String roleName;
 }

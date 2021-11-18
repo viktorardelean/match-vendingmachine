@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.Optional;
 
 @RestController
@@ -22,7 +23,7 @@ public class VendingMachineResource {
   @PatchMapping("/deposit")
   public ResponseEntity<DepositResponseDto> deposit(
       @RequestHeader(name = "Authorization") String authorizationHeader,
-      @RequestBody DepositRequestDto depositRequestDto) {
+      @RequestBody @Valid DepositRequestDto depositRequestDto) {
     Optional<String> jwt = jwtUtil.extractToken(authorizationHeader);
     String username = jwtUtil.extractUsername(jwtUtil.decodeToken(jwt.get()));
     return ResponseEntity.ok().body(vendingMachineService.deposit(username, depositRequestDto));
@@ -31,7 +32,7 @@ public class VendingMachineResource {
   @PutMapping("/buy")
   public ResponseEntity<BuyResponseDto> buy(
       @RequestHeader(name = "Authorization") String authorizationHeader,
-      @RequestBody BuyRequestDto buyRequestDto) {
+      @RequestBody @Valid BuyRequestDto buyRequestDto) {
     Optional<String> jwt = jwtUtil.extractToken(authorizationHeader);
     String username = jwtUtil.extractUsername(jwtUtil.decodeToken(jwt.get()));
     return ResponseEntity.ok().body(vendingMachineService.buy(username, buyRequestDto));

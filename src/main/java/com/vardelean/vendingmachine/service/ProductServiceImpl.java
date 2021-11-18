@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.vardelean.vendingmachine.config.SecurityConfig.ROLE_SELLER;
+import static com.vardelean.vendingmachine.util.ErrorMessages.*;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -32,35 +33,35 @@ public class ProductServiceImpl implements ProductService {
 
   @Override
   public ProductDto saveProduct(@NonNull ProductDto productDto) {
-    if (productDto.getSellerId() == null) {
-      throw httpUtil.badRequest(productDto.getSellerId(), "sellerId must not be null: ");
-    }
+    log.info("Save product to DB: {}", productDto);
     Optional<VendingMachineUser> sellerOptional =
         vendingMachineUserRepo.findById(productDto.getSellerId());
     return sellerOptional
         .map(
             seller -> {
               Product product = productConverter.toEntity(productDto);
-              if (isNotSeller(seller)) {
-                throw httpUtil.badRequest(
-                    seller.getId(), "Cannot assign a product to a user that is not a seller: ");
+              if (isSeller(seller)) {
+                product.setSeller(seller);
+                product = productRepo.save(product);
+                return productConverter.toDto(product);
+              } else {
+                throw httpUtil.badRequest(ERROR_CANNOT_ASSIGN_PRODUCT_TO_BUYER, seller.getId());
               }
-              product.setSeller(seller);
-
-              log.info("Save product to DB: {}", product);
-              product = productRepo.save(product);
-              return productConverter.toDto(product);
             })
-        .orElseThrow(() -> httpUtil.badRequest(productDto.getSellerId(), "User does not exist: "));
+        .orElseThrow(() -> httpUtil.badRequest(ERROR_INVALID_USER_ID, productDto.getSellerId()));
   }
 
   @Override
   public ProductDto getProduct(@NonNull Long productId) {
     log.info("Read product from DB: {}", productId);
+    return productConverter.toDto(getProductEntity(productId));
+  }
+
+  @Override
+  public Product getProductEntity(@NonNull Long productId) {
+    log.info("Read product from DB: {}", productId);
     Optional<Product> product = productRepo.findById(productId);
-    return product
-        .map(productConverter::toDto)
-        .orElseThrow(() -> httpUtil.badRequest(productId, "Product does not exists: "));
+    return product.orElseThrow(() -> httpUtil.badRequest(ERROR_INVALID_PRODUCT_ID, productId));
   }
 
   @Override
@@ -70,11 +71,8 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
-  public ProductDto updateProduct(Long productId, ProductDto productDto) {
+  public ProductDto updateProduct(@NonNull Long productId, ProductDto productDto) {
     log.info("Update product : {}", productId);
-    if (productDto.getSellerId() == null) {
-      throw httpUtil.badRequest(productDto.getSellerId(), "sellerId must not be null: ");
-    }
     Optional<Product> productOptional = productRepo.findById(productId);
     return productOptional
         .map(
@@ -85,27 +83,27 @@ public class ProductServiceImpl implements ProductService {
               return sellerOptional
                   .map(
                       seller -> {
-                        if (isNotSeller(seller)) {
+                        if (isSeller(seller)) {
+                          product.setSeller(seller);
+                          return productConverter.toDto(product);
+                        } else {
                           throw httpUtil.badRequest(
-                              seller.getId(),
-                              "Cannot assign a product to a user that is not a seller: ");
+                              ERROR_CANNOT_ASSIGN_PRODUCT_TO_BUYER, seller.getId());
                         }
-                        product.setSeller(seller);
-                        return productConverter.toDto(product);
                       })
                   .orElseThrow(
-                      () -> httpUtil.badRequest(productDto.getSellerId(), "User does not exist: "));
+                      () -> httpUtil.badRequest(ERROR_INVALID_USER_ID, productDto.getSellerId()));
             })
-        .orElseThrow(() -> httpUtil.badRequest(productId, "Product does not exists: "));
+        .orElseThrow(() -> httpUtil.badRequest(ERROR_INVALID_PRODUCT_ID, productId));
   }
 
   @Override
-  public void deleteProduct(Long productId) {
+  public void deleteProduct(@NonNull Long productId) {
     log.info("Delete product : {}", productId);
     productRepo.deleteById(productId);
   }
 
-  private boolean isNotSeller(VendingMachineUser seller) {
+  private boolean isSeller(VendingMachineUser seller) {
     return seller.getRoles().stream().anyMatch(role -> ROLE_SELLER.equals(role.getName()));
   }
 }

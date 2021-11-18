@@ -35,15 +35,19 @@ public class HttpUtil {
     new ObjectMapper().writeValue(response.getOutputStream(), authenticationResponse);
   }
 
-  public RuntimeException badRequest(Long value, String message) {
+  public ResponseStatusException badRequest(String message, Long value) {
     return badRequest(String.valueOf(value), message);
   }
 
-  public RuntimeException badRequest(Map value, String message) {
+  public ResponseStatusException badRequest(String message, Object object) {
+    return badRequest(object.toString(), message);
+  }
+
+  public ResponseStatusException badRequest(String message, Map value) {
     return badRequest(String.valueOf(value), message);
   }
 
-  public RuntimeException badRequest(String value, String message) {
+  public ResponseStatusException badRequest(String value, String message) {
     log.error(message + "{}", value);
     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message + value);
   }

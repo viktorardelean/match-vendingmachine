@@ -3,8 +3,6 @@ package com.vardelean.vendingmachine.service;
 import com.vardelean.vendingmachine.dto.*;
 import com.vardelean.vendingmachine.model.Product;
 import com.vardelean.vendingmachine.model.VendingMachineUser;
-import com.vardelean.vendingmachine.repo.ProductRepo;
-import com.vardelean.vendingmachine.repo.VendingMachineUserRepo;
 import com.vardelean.vendingmachine.util.HttpUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,92 +12,131 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
+import static com.vardelean.vendingmachine.util.ErrorMessages.*;
+
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
 @Service
 public class VendingMachineServiceImpl implements VendingMachineService {
 
-  private static final Set<Long> VALID_COINS =
-      new HashSet<>(Arrays.asList(5L, 10L, 20L, 50L, 100L));
-  private final VendingMachineUserRepo vendingMachineUserRepo;
-  private final ProductRepo productRepo;
+  private static final List<Long> VALID_COINS = Arrays.asList(5L, 10L, 20L, 50L, 100L);
+  private final VendingMachineUserService vendingMachineUserService;
+  private final ProductService productService;
   private final HttpUtil httpUtil;
 
   @Override
   public DepositResponseDto deposit(
       @NonNull String username, @NonNull DepositRequestDto depositRequestDto) {
     log.info("Deposit coins {} for username : {}", depositRequestDto.getCoins(), username);
-    Optional<VendingMachineUser> vendingMachineUser =
-        vendingMachineUserRepo.findByUsername(username);
-    return vendingMachineUser
-        .map(
-            user -> {
-              final Long currentDeposit = user.getDeposit();
-              final Long depositAmount = calculateTotalAmount(depositRequestDto.getCoins());
-              final Long newDeposit = currentDeposit + depositAmount;
-              user.setDeposit(newDeposit);
-              return new DepositResponseDto(newDeposit);
-            })
-        .orElseThrow(() -> httpUtil.badRequest(username, "User does not exists: "));
+    VendingMachineUser vendingMachineUser = vendingMachineUserService.getUserByUsername(username);
+    final Long currentDeposit = vendingMachineUser.getDeposit();
+    final Long depositAmount = calculateTotalAmount(depositRequestDto.getCoins());
+    final Long newDeposit = currentDeposit + depositAmount;
+    vendingMachineUser.setDeposit(newDeposit);
+    return new DepositResponseDto(newDeposit);
   }
 
   @Override
   public BuyResponseDto buy(@NonNull String username, @NonNull BuyRequestDto buyRequestDto) {
-    log.info("Buy poducts {} as user : {}", buyRequestDto.getProducts(), username);
-    Optional<VendingMachineUser> vendingMachineUser =
-        vendingMachineUserRepo.findByUsername(username);
-    return vendingMachineUser
-        .map(
-            user -> {
-              final Long deposit = user.getDeposit();
-              if (isDepositSufficient(deposit, buyRequestDto.getProducts())) {
-
-              } else {
-                throw httpUtil.badRequest(
-                    deposit, "User deposit amount is not sufficient for purchase");
-              }
-              return new BuyResponseDto();
-            })
-        .orElseThrow(() -> httpUtil.badRequest(username, "User does not exists: "));
+    log.info("Buy products {} as user : {}", buyRequestDto.getProduct(), username);
+    VendingMachineUser vendingMachineUser = vendingMachineUserService.getUserByUsername(username);
+    final Long deposit = vendingMachineUser.getDeposit();
+    final AbstractMap.SimpleImmutableEntry<ProductDto, Long> productWithRequestedAmount =
+        getProductWithRequestedAmount(buyRequestDto.getProduct());
+    final Long totalRequestedCost = getTotalCost(productWithRequestedAmount);
+    if (isDepositSufficient(deposit, totalRequestedCost)) {
+      AbstractMap.SimpleImmutableEntry<Long, List<AbstractMap.SimpleImmutableEntry<Long, Long>>>
+          change = getChange(deposit, totalRequestedCost);
+      vendingMachineUser.setDeposit(change.getKey());
+      substractProductAmount(buyRequestDto.getProduct());
+      return new BuyResponseDto(
+          totalRequestedCost, getPurchasedProduct(buyRequestDto.getProduct()), change.getValue());
+    } else {
+      throw httpUtil.badRequest(ERROR_INSUFFICIENT_DEPOSIT, deposit);
+    }
   }
 
-  private Long calculateTotalAmount(final Map<Long, Long> coins) {
-    if (coins == null) {
-      return 0L;
-    }
+  private void substractProductAmount(ProductBuyDto productBuyDto) {
+    Product purchasedProduct = productService.getProductEntity(productBuyDto.getProductId());
+    Long availableAmount = purchasedProduct.getAmountAvailable();
+    purchasedProduct.setAmountAvailable(availableAmount - productBuyDto.getRequestedAmount());
+  }
+
+  @NonNull
+  private Long calculateTotalAmount(@NonNull final Map<Long, Long> coins) {
     if (valid(coins)) {
       return coins.entrySet().stream()
+          .filter(coin -> coin.getValue() >= 0)
           .reduce(
               0L,
               (partialSum, coinEntry) -> partialSum + coinEntry.getKey() * coinEntry.getValue(),
               Long::sum);
     } else {
-      throw httpUtil.badRequest(coins, "Invalid coins inserted: ");
+      throw httpUtil.badRequest(ERROR_INVALID_COINS, coins);
     }
   }
 
-  private boolean valid(Map<Long, Long> coins) {
+  private boolean valid(@NonNull final Map<Long, Long> coins) {
     return VALID_COINS.containsAll(coins.keySet());
   }
 
-  private boolean isDepositSufficient(Long deposit, List<ProductBuyDto> products) {
-    return deposit >= totalAmount(products);
+  private boolean isDepositSufficient(
+      @NonNull final Long deposit, @NonNull final Long totalAmount) {
+    return deposit >= totalAmount;
   }
 
-  private Long totalAmount(List<ProductBuyDto> products) {
-    return products.stream()
-        .reduce(
-            0L,
-            (partialSum, product) ->
-                partialSum + getCost(product.getProductId()) * product.getAmount(),
-            Long::sum);
+  @NonNull
+  private AbstractMap.SimpleImmutableEntry<ProductDto, Long> getProductWithRequestedAmount(
+      @NonNull final ProductBuyDto productBuyDto) {
+    ProductDto productDto = productService.getProduct(productBuyDto.getProductId());
+    if (productBuyDto.getRequestedAmount() > productDto.getAmountAvailable()) {
+      throw httpUtil.badRequest(ERROR_INSUFFICIENT_AMOUNT, productDto.getAmountAvailable());
+    }
+
+    return new AbstractMap.SimpleImmutableEntry<>(productDto, productBuyDto.getRequestedAmount());
   }
 
-  private Long getCost(Long productId) {
-    Optional<Product> productOptional = productRepo.findById(productId);
-    return productOptional
-        .map(Product::getCost)
-        .orElseThrow(() -> httpUtil.badRequest(productId, "Invalid product id: "));
+  @NonNull
+  private Long getTotalCost(
+      @NonNull final AbstractMap.SimpleImmutableEntry<ProductDto, Long> productAmount) {
+    if (productAmount.getValue() > 0) {
+      return productAmount.getKey().getCost() * productAmount.getValue();
+    } else {
+      return 0L;
+    }
+  }
+
+  private Optional<ProductBuyDto> getPurchasedProduct(@NonNull final ProductBuyDto productBuyDto) {
+    if (productBuyDto.getRequestedAmount() > 0) {
+      return Optional.of(productBuyDto);
+    } else {
+      return Optional.empty();
+    }
+  }
+
+  @NonNull
+  private AbstractMap.SimpleImmutableEntry<Long, List<AbstractMap.SimpleImmutableEntry<Long, Long>>>
+      getChange(@NonNull final Long deposit, @NonNull final Long totalAmount) {
+
+    List<AbstractMap.SimpleImmutableEntry<Long, Long>> changeList = new ArrayList<>();
+    Long changeAmount = deposit - totalAmount;
+    VALID_COINS.sort(Comparator.reverseOrder());
+    for (Long coin : VALID_COINS) {
+      Long coinAmount = getCoinAmount(coin, changeAmount);
+      if (coinAmount > 0L) {
+        changeList.add(new AbstractMap.SimpleImmutableEntry<>(coin, coinAmount));
+        changeAmount %= coin;
+      }
+    }
+    return new AbstractMap.SimpleImmutableEntry<>(changeAmount, changeList);
+  }
+
+  @NonNull
+  private Long getCoinAmount(Long coin, Long changeAmount) {
+    if (coin <= 0) {
+      return 0L;
+    }
+    return changeAmount / coin;
   }
 }
