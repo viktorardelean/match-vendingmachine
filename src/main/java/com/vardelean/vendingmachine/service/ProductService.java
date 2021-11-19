@@ -1,4 +1,4 @@
-package com.vardelean.vendingmachine.ut.service;
+package com.vardelean.vendingmachine.service;
 
 import com.vardelean.vendingmachine.dto.ProductDto;
 import com.vardelean.vendingmachine.model.Product;
@@ -15,7 +15,7 @@ public interface ProductService {
 
   List<ProductDto> getProducts();
 
-  ProductDto updateProduct(Long productId, ProductDto productDto);
+  ProductDto updateProduct(String username, Long productId, ProductDto productDto);
 
-  void deleteProduct(Long productId);
+  void deleteProduct(String username, Long productId);
 }

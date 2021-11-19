@@ -1,4 +1,4 @@
-package com.vardelean.vendingmachine.ut.service;
+package com.vardelean.vendingmachine.service;
 
 import com.vardelean.vendingmachine.dto.VendingMachineUserDto;
 import com.vardelean.vendingmachine.model.Role;
@@ -18,7 +18,7 @@ public interface VendingMachineUserService {
 
   List<Role> getRoles();
 
-  List<VendingMachineUser> getUsers();
+  List<VendingMachineUserDto> getUsers();
 
   VendingMachineUserDto updateUser(Long userId, VendingMachineUserDto vendingMachineUserDto);
 

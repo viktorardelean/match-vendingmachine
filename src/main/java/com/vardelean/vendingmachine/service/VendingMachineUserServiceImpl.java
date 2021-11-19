@@ -1,4 +1,4 @@
-package com.vardelean.vendingmachine.ut.service;
+package com.vardelean.vendingmachine.service;
 
 import com.vardelean.vendingmachine.converter.VendingMachineUserConverter;
 import com.vardelean.vendingmachine.dto.VendingMachineUserDto;
@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -149,8 +150,10 @@ public class VendingMachineUserServiceImpl
   }
 
   @Override
-  public List<VendingMachineUser> getUsers() {
-    return vendingMachineUserRepo.findAll();
+  public List<VendingMachineUserDto> getUsers() {
+    return vendingMachineUserRepo.findAll().stream()
+        .map(vendingMachineUserConverter::toDto)
+        .collect(Collectors.toList());
   }
 
   private Role getRole(@NonNull String roleName) {

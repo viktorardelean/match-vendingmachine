@@ -1,31 +1,36 @@
 package com.vardelean.vendingmachine.api;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.vardelean.vendingmachine.dto.ProductDto;
-import com.vardelean.vendingmachine.ut.service.ProductServiceImpl;
+import com.vardelean.vendingmachine.repo.ProductRepo;
+import com.vardelean.vendingmachine.repo.VendingMachineUserRepo;
+import com.vardelean.vendingmachine.util.JwtUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
-@AutoConfigureTestDatabase
-@ActiveProfiles("test")
 @TestPropertySource(locations = "classpath:application-test.properties")
 class ProductResourceIntegrationTest {
 
-  private final ProductResource productResource;
-
-  @Autowired
-  public ProductResourceIntegrationTest(ProductServiceImpl productService) {
-    productResource = new ProductResource(productService);
-  }
+  private static final String USERNAME = "user1";
+  @Autowired private ProductResource productResource;
+  @Autowired private VendingMachineUserRepo vendingMachineUserRepo;
+  @Autowired private ProductRepo productRepo;
 
   @Test
   void addProductSuccess() {
@@ -56,5 +61,21 @@ class ProductResourceIntegrationTest {
     ProductDto expectedProductDto = new ProductDto(amountAvailable, cost, productName, sellerId);
     assertThrows(
         ResponseStatusException.class, () -> productResource.addProduct(expectedProductDto));
+  }
+
+  @TestConfiguration
+  public static class TestConfig {
+
+    @Bean
+    @Primary
+    public JwtUtil mockSystemTypeDetector() {
+      JwtUtil jwtUtil = mock(JwtUtil.class);
+      final String jwt = "Bearer mockjwt";
+      final DecodedJWT decodedJWTMock = mock(DecodedJWT.class);
+      when(jwtUtil.extractToken(anyString())).thenReturn(Optional.of(jwt));
+      when(jwtUtil.decodeToken(anyString())).thenReturn(decodedJWTMock);
+      when(jwtUtil.extractUsername(decodedJWTMock)).thenReturn(USERNAME);
+      return jwtUtil;
+    }
   }
 }

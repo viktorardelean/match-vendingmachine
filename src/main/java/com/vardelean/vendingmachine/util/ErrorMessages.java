@@ -8,4 +8,5 @@ public interface ErrorMessages {
   String ERROR_INVALID_USER_ID = "Invalid user id: ";
   String ERROR_CANNOT_ASSIGN_PRODUCT_TO_BUYER =
       "Cannot assign a product to a user that is not a seller: ";
+  String ERROR_INVALID_PRODUCT_ACCESS = "User does not have permission to modify product. userId: ";
 }

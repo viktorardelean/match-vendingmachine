@@ -3,9 +3,8 @@ package com.vardelean.vendingmachine.api;
 import com.vardelean.vendingmachine.dto.VendingMachineUserDto;
 import com.vardelean.vendingmachine.model.AuthenticationRequest;
 import com.vardelean.vendingmachine.model.Role;
-import com.vardelean.vendingmachine.model.VendingMachineUser;
-import com.vardelean.vendingmachine.ut.service.AuthService;
-import com.vardelean.vendingmachine.ut.service.VendingMachineUserService;
+import com.vardelean.vendingmachine.service.AuthService;
+import com.vardelean.vendingmachine.service.VendingMachineUserService;
 import com.vardelean.vendingmachine.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -47,7 +46,7 @@ public class UserResource {
   }
 
   @GetMapping("/users")
-  public ResponseEntity<List<VendingMachineUser>> getUsers() {
+  public ResponseEntity<List<VendingMachineUserDto>> getUsers() {
     return ResponseEntity.ok().body(vendingMachineUserService.getUsers());
   }
 

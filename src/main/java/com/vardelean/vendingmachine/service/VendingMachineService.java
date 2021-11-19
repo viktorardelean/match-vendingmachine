@@ -1,4 +1,4 @@
-package com.vardelean.vendingmachine.ut.service;
+package com.vardelean.vendingmachine.service;
 
 import com.vardelean.vendingmachine.dto.BuyRequestDto;
 import com.vardelean.vendingmachine.dto.BuyResponseDto;
